@@ -44,10 +44,12 @@ class AuthController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
+        $user->assignRole('usuario');
+
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $this->userConPermisos($user),
             'token' => $token,
         ], 201);
     }
@@ -89,7 +91,7 @@ class AuthController extends Controller
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $this->userConPermisos($user),
             'token' => $token,
         ]);
     }
@@ -110,4 +112,23 @@ class AuthController extends Controller
 
         return response()->json(['message' => 'Sesión cerrada correctamente.']);
     }
+
+    private function userConPermisos(User $user): array
+{
+    return array_merge($user->toArray(), [
+        'permissions' => $user->getAllPermissions()->pluck('name')->values()->all(),
+    ]);
+}
+
+#[OA\Get(path:
+ '/api/me', summary: 'Usuario autenticado con permisos',
+  tags: ['Auth'], security: [['bearerAuth' => []]],
+  responses: [new OA\Response(response: 200, description: 'Usuario y permisos')])]
+
+public function me(Request $request)
+{
+    return response()->json([
+        'user' => $this->userConPermisos($request->user()),
+    ]);
+}
 }
