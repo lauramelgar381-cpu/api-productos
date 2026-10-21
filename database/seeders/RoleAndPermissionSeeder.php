@@ -23,6 +23,15 @@ class RoleAndPermissionSeeder extends Seeder
         Role::findOrCreate('admin', 'web')->syncPermissions($permisos);
         Role::findOrCreate('usuario', 'web')->syncPermissions(['ver-productos']);
 
+        $superadminRole = Role::findOrCreate('superadmin', 'web');
+        $superadminRole->syncPermissions(Permission::all());
+
+       $super = User::firstOrCreate(
+       ['email' => 'superadmin@test.com'],
+       ['name' => 'Super Admin', 'password' => Hash::make('super1234')],
+   );
+        $super->assignRole('superadmin');
+
         $admin = User::firstOrCreate(
             ['email' => 'admin@test.com'],
             ['name' => 'Admin', 'password' => Hash::make('admin1234')],

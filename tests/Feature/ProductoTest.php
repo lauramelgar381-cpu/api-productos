@@ -53,7 +53,7 @@ class ProductoTest extends TestCase
             ->getJson('/api/products');
 
         $response->assertStatus(200)
-            ->assertJsonCount(3);
+            ->assertJsonCount(3, 'data');
     }
 
     public function test_admin_puede_crear_un_producto(): void

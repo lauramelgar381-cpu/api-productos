@@ -7,7 +7,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable(['name', 'description', 'price', 'stock'])]
+
+
+
 class Product extends Model
 {
     use HasFactory;
 }
+

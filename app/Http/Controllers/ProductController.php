@@ -9,20 +9,44 @@ use OpenApi\Attributes as OA;
 class ProductController extends Controller
 {
     #[OA\Get(
-        path: '/api/products',
-        summary: 'Listar todos los productos',
-        tags: ['Productos'],
-        security: [['bearerAuth' => []]],
-        responses: [
-            new OA\Response(response: 200, description: 'Lista de productos'),
-            new OA\Response(response: 401, description: 'No autenticado'),
-            new OA\Response(response: 403, description: 'Sin permiso'),
-        ]
-    )]
-    public function index()
-    {
-        return response()->json(Product::all());
+    path: '/api/products',
+    summary: 'Listar productos (paginado)',
+    tags: ['Productos'],
+    security: [['bearerAuth' => []]],
+    parameters: [
+        new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer', default: 1)),
+        new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', default: 5, maximum: 50)),
+        new OA\Parameter(name: 'search', in: 'query', description: 'Busca en nombre y descripción', schema: new OA\Schema(type: 'string')),
+        new OA\Parameter(name: 'sort', in: 'query', schema: new OA\Schema(type: 'string', enum: ['id', 'name', 'price', 'stock'])),
+        new OA\Parameter(name: 'dir', in: 'query', schema: new OA\Schema(type: 'string', enum: ['asc', 'desc'])),
+    ],
+    responses: [
+        new OA\Response(response: 200, description: 'Lista paginada de productos'),
+        new OA\Response(response: 401, description: 'No autenticado'),
+        new OA\Response(response: 403, description: 'Sin permiso'),
+    ]
+)]
+    public function index(Request $request)
+{
+    $query = Product::query();
+
+    if ($search = $request->query('search')) {
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('description', 'like', "%{$search}%");
+        });
     }
+
+    // Lista blanca: nunca ordenes por un campo que venga sin validar
+    $sort = in_array($request->query('sort'), ['id', 'name', 'price', 'stock'])
+        ? $request->query('sort') : 'id';
+    $dir = $request->query('dir') === 'desc' ? 'desc' : 'asc';
+    $perPage = min((int) $request->query('per_page', 5), 50);
+
+    return response()->json(
+        $query->orderBy($sort, $dir)->paginate($perPage)
+    );
+}
 
     #[OA\Post(
         path: '/api/products',
